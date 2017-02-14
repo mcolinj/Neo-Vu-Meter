@@ -6,9 +6,9 @@
 
 /* Forward declaration to avoid dependency. */
 class Adafruit_NeoPixel;
-
+#define VUMETER_FPS                10
 #define VUMETER_HANG_ITERS         10
-#define VUMETER_HANG_FPS           (FPS * VUMETER_HANG_ITERS)
+#define VUMETER_HANG_FPS           (VUMETER_FPS * VUMETER_HANG_ITERS)
 
 class VuMeter1076 {
     /*

@@ -5,7 +5,6 @@
 /* VuMeter 
  *
  */
-#define FPS               10
 #define INITIAL_HANG_TIME  0.25
 #define HANG_SPEED         0.4
 
@@ -22,6 +21,7 @@ VuMeter1076::VuMeter1076(Adafruit_NeoPixel &pixels,
        _pixels(pixels), _start_index(start_index), _end_index(end_index),
        _value(0), _last_value(0) {
     _num_pixels = abs(_start_index - _end_index)+1;
+    // save state about whether meter lights move up(+1) or down(-1)
     _up_down = signum(_end_index - _start_index);
     _pixels.begin();    // fire up the NeoPixel string
 }
@@ -54,10 +54,11 @@ uint32_t VuMeter1076::pixelColor(int index) {
 
 /*
  *  Convert the meter local index value to the
- *  NeoPixel string index and set or clear the appropriate
- *  color in the correct location on the string.
+ *  NeoPixel string index and set or clear the
+ *  appropriate color in the correct location
+ *  on the string.
  *
- *  TODO:  Make this work for reversed meter.
+ *  Note pixelColor() is a function of local index.
  */
 void VuMeter1076::setMeterPixel(int index) {
     _pixels.setPixelColor(_start_index+_up_down*index, pixelColor(index));
@@ -69,9 +70,12 @@ void VuMeter1076::clearMeterPixel(int index) {
 
 
 /*
- *   nextValue is scaled in the 0-num_pixels range by the
- *   calling client.    All of the manipulation/calculations
- *   in the model uses the 0 based range.
+ *   nextValue should have been scaled in the 0-num_pixels
+ *   range by the calling client.    All of the manipulation
+ *   and the calculations in the model uses the 0 based range.
+ *
+ *   If the nextValue extends beyond the local VuMeter (and
+ *   despoils some adjacent pixels) maybe it will look interesting.
  */
 void VuMeter1076::setMeterValue(int nextValue) {
 
@@ -115,9 +119,9 @@ void VuMeter1076::hangPixels(int sensorValue) {
 
 /*
  *  These are the colors for the segments of the VU Meter.
- *  Hard coded for independence from NeoPixel init.
+ *  Probably need an API to permit the user to customize these.
  */
-const uint32_t VuMeter1076::green = 25600;
-const uint32_t VuMeter1076::yellow = 5913600;
-const uint32_t VuMeter1076::red = 6553600; 
-const uint32_t VuMeter1076::off = 0; 
+const uint32_t VuMeter1076::green = Adafruit_NeoPixel::Color(0, 100, 0);  //25600
+const uint32_t VuMeter1076::yellow = Adafruit_NeoPixel::Color(90, 60, 0); //5913600
+const uint32_t VuMeter1076::red = Adafruit_NeoPixel::Color(100, 0, 0);    //6553600
+const uint32_t VuMeter1076::off = Adafruit_NeoPixel::Color(0, 0, 0); 

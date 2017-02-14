@@ -4,9 +4,10 @@
 #endif
 #include <VuMeter1076.h>
 
-// How many NeoPixels are attached to the Arduino?
-#define PIN_PIXELS         6
+// Which pin is wired to the NeoPixels
+#define PIN_PIXELS          6
 
+// How many NeoPixels are attached to the Arduino?
 #define NUM_PIXELS         10
 #define NUM_METERS          6
 
