@@ -5,8 +5,8 @@
 /* VuMeter 
  *
  */
-#define INITIAL_HANG_TIME  0.25
-#define HANG_SPEED         0.4
+#define INITIAL_HANG_TIME  0.1
+#define HANG_SPEED         2.0
 
 #define signum(x) ((x < 0) ? -1 : (x > 0))
 
@@ -43,9 +43,9 @@ void VuMeter1076::show(void) {
  *   normalized to the 0 based position index.
  */
 uint32_t VuMeter1076::pixelColor(int index) {
-    if (index >= _num_pixels * 0.9) {
+    if (index >= _num_pixels * 0.80) {
         return red;
-    } else if (index >= _num_pixels * 0.6) {
+    } else if (index >= _num_pixels * 0.5) {
         return yellow;
     } else {
         return green;
@@ -82,6 +82,10 @@ void VuMeter1076::setMeterValue(int nextValue) {
     /*
      *  For an increase, color more pixels.
      */
+    if (nextValue >= _num_pixels) {
+        nextValue = _num_pixels-1;
+    }
+    
     if (nextValue >= _last_value) {
         for (int i=_last_value; i<=nextValue; i++) {
             setMeterPixel(i);
@@ -95,6 +99,14 @@ void VuMeter1076::setMeterValue(int nextValue) {
         }
     }
     _last_value = nextValue;
+}
+
+/*
+ *   Get the value currently displayed by the meter.  (why do I call it
+ *   _last_value?)
+ */
+int VuMeter1076::meterValue(void) {
+    return _last_value;
 }
 
 

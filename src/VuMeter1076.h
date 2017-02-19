@@ -27,6 +27,7 @@ class VuMeter1076 {
         void setMeterPixel(int index);
         void clearMeterPixel(int index);
         void setMeterValue(int sensorValue);
+        int meterValue(void);
         void hangPixels(int sensorValue);
 
     private:
