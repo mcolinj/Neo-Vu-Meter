@@ -29,55 +29,79 @@ VuMeter1076 meters[NUM_METERS] =  {
     VuMeter1076(pixels, 182, 165),
     VuMeter1076(pixels, 195, 212) } ;
 
-#define DB_TABLE_SIZE 1
-uint8_t db_table[DB_TABLE_SIZE];
-
-double sensorValueToDecibels(int sensorValue) {
-    if (sensorValue >= DB_TABLE_SIZE) {
-        sensorValue = DB_TABLE_SIZE-1;
-    }
-    if (sensorValue < 0) {
-        sensorValue = 0;
-    }
-    return db_table[sensorValue];
-}
-
 void setup() {
     Serial.begin(115200);
 }
 
+
+//
+//
+
+
 /*
- *
+ *  Compute log10, but protect against 0 value.
+ *  We could may even fudge things a little bit
+ *  more here if it gave us something that looked
+ *  good.
  */
-double sensorValueToLog(int sensorValue) {
-    if (sensorValue == 0) {
-        return 0;
-    } else if (sensorValue == 1) {
-        return 0;
+double safeLog10(int sensorValue) {
+    if (sensorValue < 10) {
+        return 1;
     } else {
         return log10(sensorValue);
     }
 }
 
-//
-//
-int maxValueSoFar = 0;
-#define DECAY_EVERY_NTH 5
-int loopCount = 0;
-double correction = 0;
-//
-void loop() {
+#define MIN_SCALE_VALUE 10             // never scale below this
+int maxValueSoFar = MIN_SCALE_VALUE;   // nominal scaling
+#define DECAY_EVERY_NTH 1000
+uint32_t callCount = 0;
 
-    loopCount++;
-    if ((loopCount % 100) == 0) {
-        maxValueSoFar *= 0.90;
-        Serial.print("decay maxValueSoFar =");
+/*
+ *   This returns value strictly in the desired range.
+ *   It tries to adjust the sensitivity.
+ */
+uint32_t scaledSensorValue(uint32_t sensorValue) {
+
+    double correctionFactor;
+    uint32_t logSensorValue;
+    uint32_t scaledSensorValue;
+
+    /* re-calibrate with a new ceiling */
+    if (sensorValue > maxValueSoFar) {
+        maxValueSoFar = sensorValue;
+        Serial.print("increase maxValueSoFar =");
         Serial.println(maxValueSoFar);
-        correction = 22/sensorValueToLog(maxValueSoFar);
-        Serial.print("correction = ");
-        Serial.println(correction);
+        correctionFactor = 22/safeLog10(maxValueSoFar);
+        Serial.print("Correction Factor = ");
+        Serial.println(correctionFactor);
+        callCount = 0;   /* reset the decay any time there is an increase */
+        logSensorValue = safeLog10(sensorValue);
     }
 
+    callCount++;
+
+    if ((callCount % DECAY_EVERY_NTH) == 0) {
+        maxValueSoFar *= 0.90;
+        if (maxValueSoFar < MIN_SCALE_VALUE) {
+            maxValueSoFar = MIN_SCALE_VALUE;
+        }
+        Serial.print("decay maxValueSoFar =");
+        Serial.println(maxValueSoFar);
+    }
+
+    /*
+     * 18 because of 18 pixels?
+     * Shift down by some number for fun.
+     */ 
+    correctionFactor = 17/safeLog10(maxValueSoFar);
+    logSensorValue = safeLog10(sensorValue);
+    scaledSensorValue = logSensorValue * correctionFactor - 3;
+    return scaledSensorValue;
+}
+
+
+void loop() {
     /*
      * Note this sensor value ought to be scaled
      * to not overflow the meter value.
@@ -85,26 +109,10 @@ void loop() {
      * For now, we get interesting effects if we
      * just let it overflow.
      */
-
-    
-    for (int i=0; i<NUM_METERS; i++) {
-        int sensorValue = analogRead(A0);
-        if (sensorValue > maxValueSoFar) {
-            maxValueSoFar = sensorValue;
-            Serial.print("increase maxValueSoFar =");
-            Serial.println(maxValueSoFar);
-        }
-        correction = 22/sensorValueToLog(maxValueSoFar);  
-        Serial.print("correction = ");
-        Serial.println(correction);
-        meters[i].setMeterValue(correction*sensorValueToLog(sensorValue)-correction);
-        Serial.print("meter value =");
-        Serial.println(meters[i].meterValue());
+    for (int i=0; i<NUM_METERS; i++) {    
+        meters[i].setMeterValue(scaledSensorValue(analogRead(A0)));
         meters[0].show();
     }
-
-    
-    
 
     //
     // And now do a little dance to simulate
