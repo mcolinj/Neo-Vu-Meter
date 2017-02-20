@@ -40,7 +40,7 @@ void setup() {
 
 /*
  *  Compute log10, but protect against 0 value.
- *  We could may even fudge things a little bit
+ *  We could maybe even fudge things a little bit
  *  more here if it gave us something that looked
  *  good.
  */
@@ -61,7 +61,7 @@ uint32_t callCount = 0;
  *   This returns value strictly in the desired range.
  *   It tries to adjust the sensitivity.
  */
-uint32_t scaledSensorValue(uint32_t sensorValue) {
+int scaledSensorValue(uint32_t sensorValue) {
 
     double correctionFactor;
     uint32_t logSensorValue;
@@ -72,11 +72,7 @@ uint32_t scaledSensorValue(uint32_t sensorValue) {
         maxValueSoFar = sensorValue;
         Serial.print("increase maxValueSoFar =");
         Serial.println(maxValueSoFar);
-        correctionFactor = 22/safeLog10(maxValueSoFar);
-        Serial.print("Correction Factor = ");
-        Serial.println(correctionFactor);
         callCount = 0;   /* reset the decay any time there is an increase */
-        logSensorValue = safeLog10(sensorValue);
     }
 
     callCount++;
@@ -92,11 +88,14 @@ uint32_t scaledSensorValue(uint32_t sensorValue) {
 
     /*
      * 18 because of 18 pixels?
-     * Shift down by some number for fun.
+     * Shift down by 3 for fun.
      */ 
-    correctionFactor = 17/safeLog10(maxValueSoFar);
+    correctionFactor = 18/safeLog10(maxValueSoFar);
     logSensorValue = safeLog10(sensorValue);
     scaledSensorValue = logSensorValue * correctionFactor - 3;
+    if (scaledSensorValue < 0) {
+        scaledSensorValue = 0;
+    }
     return scaledSensorValue;
 }
 
