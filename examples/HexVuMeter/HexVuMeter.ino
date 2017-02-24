@@ -34,10 +34,6 @@ void setup() {
 }
 
 
-//
-//
-
-
 /*
  *  Compute log10, but protect against 0 value.
  *  We could maybe even fudge things a little bit
@@ -75,9 +71,8 @@ int scaledSensorValue(uint32_t sensorValue) {
         callCount = 0;   /* reset the decay any time there is an increase */
     }
 
-    callCount++;
-
-    if ((callCount % DECAY_EVERY_NTH) == 0) {
+    if (callCount == DECAY_EVERY_NTH) {
+        callCount = 0;
         maxValueSoFar *= 0.90;
         if (maxValueSoFar < MIN_SCALE_VALUE) {
             maxValueSoFar = MIN_SCALE_VALUE;
@@ -86,11 +81,14 @@ int scaledSensorValue(uint32_t sensorValue) {
         Serial.println(maxValueSoFar);
     }
 
+    callCount++;
+
+
     /*
-     * 18 because of 18 pixels?
-     * Shift down by 3 for fun.
+     * 21 because of 21 - 3 is 18 pixels?  (0-17)
+     * Shift down by 3 to reduce number of lights in low range.
      */ 
-    correctionFactor = 18/safeLog10(maxValueSoFar);
+    correctionFactor = 21/safeLog10(maxValueSoFar);
     logSensorValue = safeLog10(sensorValue);
     scaledSensorValue = logSensorValue * correctionFactor - 3;
     if (scaledSensorValue < 0) {
@@ -102,11 +100,7 @@ int scaledSensorValue(uint32_t sensorValue) {
 
 void loop() {
     /*
-     * Note this sensor value ought to be scaled
-     * to not overflow the meter value.
-     * Is that the responsibility of the meter?
-     * For now, we get interesting effects if we
-     * just let it overflow.
+     * Distribute the next data samples over all of the meters
      */
     for (int i=0; i<NUM_METERS; i++) {    
         meters[i].setMeterValue(scaledSensorValue(analogRead(A0)));
