@@ -21,9 +21,9 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(212, PIN_PIXELS, NEO_GRB + NEO_KHZ8
 //  Create one down and one up VuMeters (back to back)
 //
 VuMeter1076 meters[NUM_METERS] =  {
-    VuMeter1076(pixels, 0, 17),
-    VuMeter1076(pixels, 52, 35),
-    VuMeter1076(pixels, 64, 81),
+    VuMeter1076(pixels, 0, 37),
+    VuMeter1076(pixels, 75, 38),
+    VuMeter1076(pixels, 100, 81),
     VuMeter1076(pixels, 117, 100),
     VuMeter1076(pixels, 130, 147),
     VuMeter1076(pixels, 182, 165),
@@ -48,9 +48,9 @@ double safeLog10(int sensorValue) {
     }
 }
 
-#define MIN_SCALE_VALUE 10             // never scale below this
+#define MIN_SCALE_VALUE 50             // never scale below this
 int maxValueSoFar = MIN_SCALE_VALUE;   // nominal scaling
-#define DECAY_EVERY_NTH 1000
+#define DECAY_EVERY_NTH 50
 uint32_t callCount = 0;
 
 /*
@@ -65,7 +65,7 @@ int scaledSensorValue(uint32_t sensorValue) {
 
     /* re-calibrate with a new ceiling */
     if (sensorValue > maxValueSoFar) {
-        maxValueSoFar = sensorValue;
+        maxValueSoFar = sensorValue * 0.9;
         Serial.print("increase maxValueSoFar =");
         Serial.println(maxValueSoFar);
         callCount = 0;   /* reset the decay any time there is an increase */
@@ -85,12 +85,12 @@ int scaledSensorValue(uint32_t sensorValue) {
 
 
     /*
-     * 21 because of 21 - 3 is 18 pixels?  (0-17)
-     * Shift down by 3 to reduce number of lights in low range.
+     * 53 because of 53 - 13 is 40 pixels?  (0-38 for robot lights)
+     * Shift down by 13 to reduce number of lights in low range.
      */ 
-    correctionFactor = 21/safeLog10(maxValueSoFar);
+    correctionFactor = 53/safeLog10(maxValueSoFar);
     logSensorValue = safeLog10(sensorValue);
-    scaledSensorValue = logSensorValue * correctionFactor - 3;
+    scaledSensorValue = logSensorValue * correctionFactor - 13;
     if (scaledSensorValue < 0) {
         scaledSensorValue = 0;
     }
