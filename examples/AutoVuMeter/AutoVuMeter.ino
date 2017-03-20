@@ -8,24 +8,25 @@
 #define PIN_PIXELS          6
 
 // How many NeoPixels are attached to the Arduino?
-#define NUM_PIXELS         10
-#define NUM_METERS          6
+#define NUM_PIXELS         18
+#define NUM_METERS          7
 
 // When we setup the NeoPixel library, we tell it how many pixels, and which pin to use to send signals.
 // Note that for older NeoPixel strips you might need to change the third parameter--see the strandtest
 // example for more information on possible values.
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_PIXELS*NUM_METERS, PIN_PIXELS, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(213, PIN_PIXELS, NEO_GRB + NEO_KHZ800);
 
 //
 //  Create one down and one up VuMeters (back to back)
 //
 VuMeter1076 meters[NUM_METERS] =  {
-    VuMeter1076(pixels, 0, 9),
-    VuMeter1076(pixels, 19, 10),
-    VuMeter1076(pixels, 20, 29),
-    VuMeter1076(pixels, 39, 30),
-    VuMeter1076(pixels, 40, 49),
-    VuMeter1076(pixels, 59, 50) } ;
+    VuMeter1076(pixels, 0, 17),
+    VuMeter1076(pixels, 52, 35),
+    VuMeter1076(pixels, 64, 81),
+    VuMeter1076(pixels, 117, 100),
+    VuMeter1076(pixels, 130, 147),
+    VuMeter1076(pixels, 182, 165),
+    VuMeter1076(pixels, 195, 212) } ;
 
 
 void setup() {
@@ -37,8 +38,12 @@ void setup() {
 //  Hollyn
 //  Alone (feat. Tru)
 //
-#define NUM_SOUND_SAMPLES 1000
+#define NUM_SOUND_SAMPLES 100
 uint8_t readings[NUM_SOUND_SAMPLES] = {
+8,13,30,23,17,10,9,29,26,20,14,12,22,17,11,7,20,21,16,12,10,21,16,12,8,36,32,19,12,8,21,19,12,9,9,22,21,12,9,26,15,10,9,8,12,9,11,8,9,11,
+10,7,8,14,11,9,8,9,13,9,11,9,29,20,14,9,9,10,9,9,8,8,12,11,9,9,42,30,12,12,15,13,14,8,10,9,10,9,9,7,14,14,8,8,12,13,11,12,10,8 };
+
+/*uint8_t readings[NUM_SOUND_SAMPLES] = {
 8,13,30,23,17,10,9,29,26,20,14,12,22,17,11,7,20,21,16,12,10,21,16,12,8,36,32,19,12,8,21,19,12,9,9,22,21,12,9,26,15,10,9,8,12,9,11,8,9,11,
 10,7,8,14,11,9,8,9,13,9,11,9,29,20,14,9,9,10,9,9,8,8,12,11,9,9,42,30,12,12,15,13,14,8,10,9,10,9,9,7,14,14,8,8,12,13,11,12,10,8,
 30,14,10,15,10,12,10,8,7,12,9,8,11,31,37,13,11,8,12,11,8,9,9,11,9,8,8,10,8,8,8,8,10,9,8,8,8,32,17,10,9,10,14,9,8,8,11,9,10,8,
@@ -60,8 +65,10 @@ uint8_t readings[NUM_SOUND_SAMPLES] = {
 18,13,15,14,14,13,31,23,14,15,17,18,18,15,14,40,21,16,14,14,15,20,22,38,39,25,14,11,15,26,16,18,16,38,27,16,11,10,11,12,9,12,15,8,8,8,8,7,8,8,
 8,8,8,8,8,9,8,8,8,8,8,8,9,9,9,8,38,23,19,12,14,22,18,15,11,10,20,21,13,11,40,23,13,14,19,27,22,13,18,41,26,15,17,17,17,16,19,43,54
 };
+*/
 
 int reading = 0;
+int sensorValue;
 
 void loop() {
     /*
@@ -69,36 +76,35 @@ void loop() {
      *  so we just use a data above as the audio source.
      *  Just wrap around when the data runs out.
      */
-    int sensorValue = readings[reading];
-    reading++;
-    if (reading >= NUM_SOUND_SAMPLES) {
-        reading = 0;
-    }
 
-    //
-    // Arbitrary scaling here.    Could play with this.
-    //
-    sensorValue /= 4.2;
-    
     //
     //  Display the same value on each of the meters
     //  Maybe we could figure out how to have rolling
     //  updates to each meter...
     //
     for (int i=0; i<NUM_METERS; i++) {
+        sensorValue = readings[reading];
+        reading++;
+        if (reading >= NUM_SOUND_SAMPLES) {
+            reading = 0;
+        }
+        Serial.println(sensorValue);
+        sensorValue = sensorValue * 0.5;
         meters[i].setMeterValue(sensorValue);
-    }
-    meters[0].show();
+        meters[0].show();
+    }   
+    
 
     //
     // And now do a little dance to simulate
     // decay of the sticking threshold value.
     //
-    for (int i = 0; i < VUMETER_HANG_ITERS; i++) {
-        for (int i=0; i<NUM_METERS; i++) {
-            meters[i].hangPixels(sensorValue);
-        }
-        meters[0].show();
-        delay((1000 / VUMETER_HANG_FPS) - 5);
+
+    for (int j=0; j<NUM_METERS; j++) {
+            for (int i = 0; i < 2; i++) {
+                meters[j].hangPixels(meters[j].meterValue());
+            }
+            meters[0].show();
+            delay((1000 / VUMETER_HANG_FPS) - 5);
     }
 }
