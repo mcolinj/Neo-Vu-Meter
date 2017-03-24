@@ -6,31 +6,32 @@
 #include <Math.h>
 
 // Which pin is wired to the NeoPixels
-#define PIN_PIXELS          6
+#define VU_PIXELS            9
+#define LIGHTRING_PIXELS     7
 
 // How many NeoPixels are attached to the Arduino?
-#define NUM_PIXELS         18
-#define NUM_METERS          7
+#define NUM_PIXELS          20
+#define NUM_METERS           5
 
 // When we setup the NeoPixel library, we tell it how many pixels, and which pin to use to send signals.
 // Note that for older NeoPixel strips you might need to change the third parameter--see the strandtest
 // example for more information on possible values.
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(212, PIN_PIXELS, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(100, VU_PIXELS, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel lr_pixels = Adafruit_NeoPixel(16, LIGHTRING_PIXELS, NEO_GRB + NEO_KHZ800);
 
 //
 //  Create one down and one up VuMeters (back to back)
 //
 VuMeter1076 meters[NUM_METERS] =  {
-    VuMeter1076(pixels, 0, 37),
-    VuMeter1076(pixels, 75, 38),
-    VuMeter1076(pixels, 100, 81),
-    VuMeter1076(pixels, 117, 100),
-    VuMeter1076(pixels, 130, 147),
-    VuMeter1076(pixels, 182, 165),
-    VuMeter1076(pixels, 195, 212) } ;
+    VuMeter1076(pixels, 0, 19),
+    VuMeter1076(pixels, 39, 20),
+    VuMeter1076(pixels, 40, 59),
+    VuMeter1076(pixels, 79, 60),
+    VuMeter1076(pixels, 80, 99),
+    };
 
 void setup() {
-    Serial.begin(115200);
+    //Serial.begin(115200);
 }
 
 
@@ -66,8 +67,8 @@ int scaledSensorValue(uint32_t sensorValue) {
     /* re-calibrate with a new ceiling */
     if (sensorValue > maxValueSoFar) {
         maxValueSoFar = sensorValue * 0.9;
-        Serial.print("increase maxValueSoFar =");
-        Serial.println(maxValueSoFar);
+        //Serial.print("increase maxValueSoFar =");
+        //Serial.println(maxValueSoFar);
         callCount = 0;   /* reset the decay any time there is an increase */
     }
 
@@ -77,8 +78,8 @@ int scaledSensorValue(uint32_t sensorValue) {
         if (maxValueSoFar < MIN_SCALE_VALUE) {
             maxValueSoFar = MIN_SCALE_VALUE;
         }
-        Serial.print("decay maxValueSoFar =");
-        Serial.println(maxValueSoFar);
+        //Serial.print("decay maxValueSoFar =");
+        //Serial.println(maxValueSoFar);
     }
 
     callCount++;
@@ -88,9 +89,9 @@ int scaledSensorValue(uint32_t sensorValue) {
      * 53 because of 53 - 13 is 40 pixels?  (0-38 for robot lights)
      * Shift down by 13 to reduce number of lights in low range.
      */ 
-    correctionFactor = 53/safeLog10(maxValueSoFar);
+    correctionFactor = 26/safeLog10(maxValueSoFar);
     logSensorValue = safeLog10(sensorValue);
-    scaledSensorValue = logSensorValue * correctionFactor - 13;
+    scaledSensorValue = logSensorValue * correctionFactor - 6;
     if (scaledSensorValue < 0) {
         scaledSensorValue = 0;
     }
@@ -99,6 +100,16 @@ int scaledSensorValue(uint32_t sensorValue) {
 
 
 void loop() {
+
+
+    /*
+     * Display the light ring every time just to be sure.
+     */
+    for(int i=0;i<16;i++){
+        lr_pixels.setPixelColor(i, pixels.Color(0,150,0)); // Moderately bright green color.
+    }
+    lr_pixels.show();
+
     /*
      * Distribute the next data samples over all of the meters
      */
