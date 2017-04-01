@@ -50,8 +50,9 @@ def log_scale_to_range(low_cutoff, high_cutoff, num_pixels, sensor_value):
     if (norm_value <= 0):
         norm_value = 1
 
-    pixels_per_log_ticks = num_pixels / math.log(values_in_range)
-    pixels = pixels_per_log_ticks * math.log(norm_value)
+    # 20 * log(normalized_max_value) is the maximum
+    pixels_per_log_ticks = num_pixels / (20*math.log(values_in_range))
+    pixels = pixels_per_log_ticks * 20*math.log(norm_value)
 
     return pixels
 
@@ -60,8 +61,8 @@ def test_log_scaling():
     """
     Assuming low cuttoff of 100, and high cuttoff of 500, scale
     the sensor value i so that it maps to a pixel index to display
-    uniformly over 20 pixels.    Try out all values between 90 and 510
-    and display the results.
+    log scale over 20 pixels.    Try out all values between 90 and 510
+    and display the results.   Try to mimic db behavior (e.g. 20logX)
     """
     for i in range(90, 510):
         print i, "=>", log_scale_to_range(100, 500, 20, i)
