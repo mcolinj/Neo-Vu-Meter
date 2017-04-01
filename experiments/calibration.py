@@ -38,3 +38,34 @@ def test_linear_scaling():
     """
     for i in range(90, 510):
         print i, "=>", linear_scale_to_range(100, 500, 20, i)
+
+import math
+
+def log_scale_to_range(low_cutoff, high_cutoff, num_pixels, sensor_value):
+    """
+    Compute the number of pixels to indicate log-scale fit.
+    """
+    values_in_range = high_cutoff - low_cutoff + 1
+    norm_value = sensor_value - low_cutoff
+    if (norm_value <= 0):
+        norm_value = 1
+
+    pixels_per_log_ticks = num_pixels / math.log(values_in_range)
+    pixels = pixels_per_log_ticks * math.log(norm_value)
+
+    return pixels
+
+
+def test_log_scaling():
+    """
+    Assuming low cuttoff of 100, and high cuttoff of 500, scale
+    the sensor value i so that it maps to a pixel index to display
+    uniformly over 20 pixels.    Try out all values between 90 and 510
+    and display the results.
+    """
+    for i in range(90, 510):
+        print i, "=>", log_scale_to_range(100, 500, 20, i)
+
+
+    
+    
